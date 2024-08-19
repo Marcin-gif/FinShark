@@ -1,4 +1,5 @@
 using FinShark.Data;
+using FinShark.Services.CommentService;
 using FinShark.Services.StockService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,7 @@ namespace FinShark
             });
 
             builder.Services.AddScoped<IStockService, StockService>();
+            builder.Services.AddScoped<ICommentService, CommentService>();
 
             var app = builder.Build();
 

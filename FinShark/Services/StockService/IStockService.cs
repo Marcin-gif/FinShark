@@ -8,8 +8,8 @@ namespace FinShark.Services.StockService
     {
         Task<IEnumerable<StockDto>> GetAll();
         Task<StockDto> GetStockById(int id);
-        Task<int> CreateNewStock(CreateStockRequestDto stock);
-        Task<bool> UpdateStock(int id, UpdateStockRequestDto stock);
-        Task<bool> DeleteStock(int id);
+        Task<CreateStockResult> CreateNewStock(CreateStockRequestDto stock);
+        Task<UpdateStockResult> UpdateStock(int id, UpdateStockRequestDto stock);
+        Task<DeleteStockResult> DeleteStock(int id);
     }
 }

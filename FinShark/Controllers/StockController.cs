@@ -46,13 +46,23 @@ namespace FinShark.Controllers
         {
             try
             {
-                var newStockId = await _stockService.CreateNewStock(stockDto);
+                var result = await _stockService.CreateNewStock(stockDto);
 
-                return Created($"/api/stock/{newStockId}", null);
+                if(result.Success)
+                {
+                    return Created($"/api/stock/{result.CreatedStockId}", result);
+                }
+
+                return BadRequest(result);
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                var errorResponse = new ErrorResponse
+                {
+                    Message = e.Message
+                };
+
+                return BadRequest(errorResponse);
             }
 
         }
@@ -63,23 +73,24 @@ namespace FinShark.Controllers
         { 
             var result = await _stockService.UpdateStock(id, updateStockDto);
 
-            if(!result)
+            if(!result.Success)
             {
-                return NotFound();
+                return NotFound(result);
             }
 
             return Ok(result);
         }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteById([FromRoute] int id) 
         { 
             var result = await _stockService.DeleteStock(id);
-            if (!result)
+            if (result.Success)
             {
-                return NotFound();
+                return NoContent();
             }
 
-            return NoContent();
+            return NotFound(result);
         }
     }
 }

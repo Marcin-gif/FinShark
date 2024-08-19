@@ -15,7 +15,7 @@ namespace FinShark.Services.StockService
             _dbContext = dbConetxt;
         }
 
-        public async Task<int> CreateNewStock(CreateStockRequestDto stock)
+        public async Task<CreateStockResult> CreateNewStock(CreateStockRequestDto stock)
         {
             using (var transaction = _dbContext.Database.BeginTransaction())
             {
@@ -24,44 +24,93 @@ namespace FinShark.Services.StockService
                     var stockModel = stock.ToStockFromCreateDto();
                     if (stockModel == null)
                     {
-                        throw new ArgumentException("Invalid stock data");
+                        return new CreateStockResult 
+                        { 
+                            Success = false,
+                            Message = "Stock cannot be created",
+                            ErrorCode = "CREATE_ERROR"
+                        };
                     }
                     await _dbContext.Stocks.AddAsync(stockModel);
                     await _dbContext.SaveChangesAsync();
-                    transaction.Commit();
+                    await transaction.CommitAsync();
 
-                    return stockModel.Id;
+                    return new CreateStockResult
+                    { 
+                        Success = true,
+                        Message = "Stock created successfully",
+                        CreatedStockId = stockModel.Id
+                    };
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    await transaction.RollbackAsync();
+                    return new CreateStockResult
+                    {
+                        Success = false,
+                        Message = "Database update failed",
+                        ErrorCode = "DB_UPDATE_ERROR"
+                    };
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
-                    throw new InvalidOperationException("Failed to create new stock");
+                    await transaction.RollbackAsync();
+                    return new CreateStockResult
+                    {
+                        Success = false,
+                        Message = "An unexpected error occurred",
+                        ErrorCode = "UNEXPECTED_ERROR"
+                    };
                 }
             }
         }
 
-        public async Task<bool> DeleteStock(int id)
+        public async Task<DeleteStockResult> DeleteStock(int id)
         {
-            using (var transaction = _dbContext.Database.BeginTransaction())
+            using (var transaction = await _dbContext.Database.BeginTransactionAsync())
             {
                 try
                 {
                     var deleteStock = await _dbContext.Stocks.FirstOrDefaultAsync(x => x.Id == id);
                     if (deleteStock == null)
                     {
-                        return false;
+                        return new DeleteStockResult
+                        {
+                            Success = false,
+                            Message = "Stock not found",
+                            ErrorCode = "NOT_FOUND"
+                        };
                     }
 
                     _dbContext.Stocks.Remove(deleteStock);
 
                     await _dbContext.SaveChangesAsync();
-                    transaction.Commit();
-                    return true;
+                    await transaction.CommitAsync();
+                    return new DeleteStockResult
+                    {
+                        Success = true,
+                        Message = "Stock deleted successfully"
+                    };
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    await transaction.RollbackAsync();
+                    return new DeleteStockResult
+                    {
+                        Success = false,
+                        Message = "Database update failed",
+                        ErrorCode = "DB_UPDATE_ERROR"
+                    };
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
-                    return false;
+                    await transaction.RollbackAsync();
+                    return new DeleteStockResult
+                    {
+                        Success = false,
+                        Message = "An unexpected error occurred",
+                        ErrorCode = "UNEXPECTED_ERROR"
+                    };
                 }
 
             }
@@ -86,16 +135,21 @@ namespace FinShark.Services.StockService
             return stock.ToStockDto();
         }
 
-        public async Task<bool> UpdateStock(int id, UpdateStockRequestDto stock)
+        public async Task<UpdateStockResult> UpdateStock(int id, UpdateStockRequestDto stock)
         {
-            using (var transaction = _dbContext.Database.BeginTransaction())
+            using (var transaction = await _dbContext.Database.BeginTransactionAsync())
             {
                 try
                 {
                     var existingStock = await _dbContext.Stocks.FirstOrDefaultAsync(c => c.Id == id);
                     if (existingStock == null)
                     {
-                        return false;
+                        return new UpdateStockResult
+                        {
+                            Success = false,
+                            Message = "Stock not found",
+                            ErrorCode = "NOT_FOUND"
+                        };
                     }
 
                     existingStock.Symbol = stock.Symbol;
@@ -106,13 +160,32 @@ namespace FinShark.Services.StockService
                     existingStock.MarketCap = stock.MarketCap;
 
                     await _dbContext.SaveChangesAsync();
-                    transaction.Commit();
-                    return true;
+                    await transaction.CommitAsync();
+                    return new UpdateStockResult 
+                    { 
+                        Success = true,
+                        Message = "Stock updated successfully"
+                    };
                 }
-                catch (Exception ex)
+                catch (DbUpdateException ex)
                 {
-                    transaction.Rollback();
-                    return false;
+                    await transaction.RollbackAsync();
+                    return new UpdateStockResult 
+                    { 
+                       Success = false, 
+                       Message = "Database update failed", 
+                       ErrorCode = "DB_UPDATE_ERROR" 
+                    };
+                }
+                catch(Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return new UpdateStockResult
+                    {
+                        Success = false,
+                        Message = "An unexpected error occured",
+                        ErrorCode = "UNEXPECTED_ERROR"
+                    };
                 }
             }
         }
