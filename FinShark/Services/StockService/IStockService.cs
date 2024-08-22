@@ -11,5 +11,6 @@ namespace FinShark.Services.StockService
         Task<CreateStockResult> CreateNewStock(CreateStockRequestDto stock);
         Task<UpdateStockResult> UpdateStock(int id, UpdateStockRequestDto stock);
         Task<DeleteStockResult> DeleteStock(int id);
+        Task<bool> StockExists(int id);
     }
 }

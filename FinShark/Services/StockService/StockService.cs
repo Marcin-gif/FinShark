@@ -119,20 +119,25 @@ namespace FinShark.Services.StockService
 
         public async Task<IEnumerable<StockDto>> GetAll()
         {
-            var stocks = await _dbContext.Stocks.ToListAsync();
+            var stocks = await _dbContext.Stocks.Include(c=>c.Comments).ToListAsync();
             var stockDto = stocks.Select(s => s.ToStockDto());
             return stockDto;
         }
 
         public async Task<StockDto> GetStockById(int id)
         {
-            var stock = await _dbContext.Stocks.FindAsync(id);
+            var stock = await _dbContext.Stocks.Include(c => c.Comments).FirstOrDefaultAsync(c=>c.Id==id);
 
             if (stock == null)
             {
                 throw new KeyNotFoundException($"Stock with ID {id} not found");
             }
             return stock.ToStockDto();
+        }
+
+        public async Task<bool> StockExists(int id)
+        {
+            return await _dbContext.Stocks.AnyAsync(c => c.Id==id);
         }
 
         public async Task<UpdateStockResult> UpdateStock(int id, UpdateStockRequestDto stock)
