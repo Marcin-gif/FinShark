@@ -8,6 +8,8 @@ namespace FinShark.Services.CommentService
         Task<IEnumerable<CommentDto>> GetAllAsync();
         Task<CommentDto> GetByIdAsync(int id);
         Task<CreatedCommentResult> CreateAsync(int stockId, CreateCommentRequestDto commentDto);
-            
+        Task<UpdateCommentResult> UpdateAsync(int commentId, UpdateCommentRequestDto commentDto);
+        Task<UpdateCommentResult> DeleteAsync(int commentId);
+        Task<bool> CommentExists(int id);
     }
 }

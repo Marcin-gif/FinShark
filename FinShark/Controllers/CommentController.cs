@@ -26,6 +26,9 @@ namespace FinShark.Controllers
         {
             try
             {
+                if(!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
                 var result = await _commentService.GetAllAsync();
 
                 if (result == null)
@@ -45,11 +48,14 @@ namespace FinShark.Controllers
             }
 
         }
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<CommentDto>> GetById([FromRoute] int id)
         {
             try
             {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
                 var comment = await _commentService.GetByIdAsync(id);
 
                 if (comment == null)
@@ -67,16 +73,21 @@ namespace FinShark.Controllers
                 });
             }
         }
-        [HttpPost("{stockId}")]
+        [HttpPost("{stockId:int}")]
         public async Task<ActionResult<Comment>> Create([FromRoute] int stockId, [FromBody] CreateCommentRequestDto commentDto)
         {
             try
             {
-                var result = await _commentService.CreateAsync(stockId,commentDto);
-                if(!await _stockService.StockExists(stockId))
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                if (!await _stockService.StockExists(stockId))
                 {
                     return BadRequest("Stock does not exist");
                 }
+
+                var result = await _commentService.CreateAsync(stockId, commentDto);
+                
                 if (result.Success)
                 {
                     return Created($"/api/stock/{result.CreatedCommentId}", result);
@@ -91,6 +102,68 @@ namespace FinShark.Controllers
                     Message = e.Message
                 };
 
+                return BadRequest(errorResponse);
+            }
+        }
+
+        [HttpPut("{commentId:int}")]
+        public async Task<ActionResult<Comment>> Update([FromRoute] int commentId, [FromBody] UpdateCommentRequestDto commentDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                if (!await _commentService.CommentExists(commentId))
+                {
+                    return BadRequest("Comment does not exist");
+                }
+                
+                var result = await _commentService.UpdateAsync(commentId, commentDto);
+
+                if (result.Success)
+                {
+                    return Ok(result);
+                }
+                return BadRequest(result);
+            }
+            catch(Exception e)
+            {
+                var errorResponse = new ErrorResponse
+                {
+                    Message= e.Message
+                };
+                return BadRequest(errorResponse);
+            }
+        }
+
+        [HttpDelete("{commentId:int}")]
+        public async Task<IActionResult> Delete([FromRoute] int commentId)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                if (! await _commentService.CommentExists(commentId))
+                {
+                    return BadRequest("Comment does not exist");
+                }
+
+                var result = await _commentService.DeleteAsync(commentId);
+
+                if (result.Success)
+                {
+                    return Ok(result);
+                }
+                return BadRequest(result);
+            }
+            catch(Exception e)
+            {
+                var errorResponse = new ErrorResponse
+                {
+                    Message = e.Message
+                };
                 return BadRequest(errorResponse);
             }
         }

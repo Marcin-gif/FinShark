@@ -1,5 +1,6 @@
 ﻿using FinShark.Data;
 using FinShark.DTOs.Stock;
+using FinShark.Helpers;
 using FinShark.Models;
 using FinShark.Services.StockService;
 using Microsoft.AspNetCore.Http;
@@ -19,18 +20,23 @@ namespace FinShark.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Stock>>> GetAll()
+        public async Task<ActionResult<IEnumerable<Stock>>> GetAll([FromQuery] QueryObject query)
         {
-            var stocks = await _stockService.GetAll();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var stocks = await _stockService.GetAll(query);
 
             return Ok(stocks);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Stock>> GetById([FromRoute] int id)
         {
             try
             {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
                 var stock = await _stockService.GetStockById(id);
 
                 return Ok(stock);
@@ -46,6 +52,9 @@ namespace FinShark.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
                 var result = await _stockService.CreateNewStock(stockDto);
 
                 if(result.Success)
@@ -68,9 +77,12 @@ namespace FinShark.Controllers
         }
 
         [HttpPut]
-        [Route("{id}")]
+        [Route("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockRequestDto updateStockDto)
-        { 
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var result = await _stockService.UpdateStock(id, updateStockDto);
 
             if(!result.Success)
@@ -81,9 +93,12 @@ namespace FinShark.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteById([FromRoute] int id) 
-        { 
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var result = await _stockService.DeleteStock(id);
             if (result.Success)
             {
